@@ -1,1 +1,9 @@
-.env
+PORT=5000
+MONGO_URI=mongodb+srv://Team4:FU0Z0tZrAwAlpKai@rentalsystem.sf0jxiq.mongodb.net/?retryWrites=true&w=majority&appName=RentalSystem 
+PORT=5000
+JWT_SECRET=
+# DB_HOST=localhost
+DB_USER=mohammed
+DB_PASSWORD=FU0Z0tZrAwAlpKai  
+node_modules
+
