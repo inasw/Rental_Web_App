@@ -1,28 +1,17 @@
-const express = require('express');
-const mongoose = require('mongoose');
-require('dotenv').config();
 
-const authRoutes = require('./Routes/authRoutes');
+const express = require('express');
+const connectDB = require('./config/db');
+const dotenv = require('dotenv').config();
+
+const port = process.env.PORT || 5000;
+
+connectDB();
 
 const app = express();
 
-// Middleware
-app.use(express.json());
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: false })); 
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('Error connecting to MongoDB:', err));
+app.use('/api/users', require('./routes/userRoutes'));
 
-// Routes
-app.use('/api/auth', authRoutes);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Internal server error' });
-});
-
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+app.listen(port, () => console.log(`Server started on port ${port}`));
