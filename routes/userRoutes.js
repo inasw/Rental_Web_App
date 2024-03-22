@@ -29,9 +29,9 @@ router.post("/brokers", protect, isAdmin, createBroker);
 router.put("/brokers/:id", protect, isAdmin, updateBroker);
 router.delete("/brokers/:id", protect, isAdmin, deleteBroker);
 
-router.post("/renters", protect, isAdmin, createRenter);
-router.put("/renters/:id", protect, isAdmin, updateRenter);
-router.delete("/renters/:id", protect, isAdmin, deleteRenter);
+// router.post("/renters", protect, isAdmin, createRenter);
+// router.put("/renters/:id", protect, isAdmin, updateRenter);
+// router.delete("/renters/:id", protect, isAdmin, deleteRenter);
 
 // Public Routes
 router.post("/register", protect, isAdmin, registerUser);

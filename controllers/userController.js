@@ -255,7 +255,7 @@ module.exports = {
   createBroker,
   updateBroker,
   deleteBroker,
-  createRenter,
-  updateRenter,
-  deleteRenter
+  // createRenter,
+  // updateRenter,
+  // deleteRenter
 };

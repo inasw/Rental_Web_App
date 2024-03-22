@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema({
         enum: ['SuperAdmin', 'Admin', 'Landlord', 'Broker', 'Renter'],
         default: 'Renter'
     },
+    contact: {
+        type: Number, // Change type to Number for integer values
+        required: true
+    },
     blocked: {
         type: Boolean,
         default: false
