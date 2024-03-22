@@ -1,7 +1,5 @@
 const mongoose = require( 'mongoose' );
 // const {isEmail} = require( "validator" );
-const crypto = require('crypto')
-
 const userSchema = mongoose.Schema({
     name:{
         type:String,
@@ -17,11 +15,6 @@ const userSchema = mongoose.Schema({
         type:String,
         required:true,
         minlength:[8, "Password must be at least 8 characters"],
-    },
-    resetLink:{
-        type:String,
-        data:String,
-        // required:true,
     },
     username:{
         type:String,

@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const asynchandler = require("express-async-handler")
 const User = require('../model/userModel')
-const {requestPasswordReset,resetPassword} = require('../service/authResetPassword')
  
 //   Register
 const register = async(req,res)=>{
@@ -198,21 +197,70 @@ const generateToken = (id) =>{
         )
 }
 
-const resetPasswordRequestController = async (req, res, next) => {
-    const requestPasswordResetService = await requestPasswordReset(
-      req.body.email
-    );
-    return res.json(requestPasswordResetService);
-  };
+const forgetPassword = async(req,res) =>{
+    try{
+        const user = await User.findOne({email:req.body.email})
+        if(!user){
+            res.status(400).json('No account with this email found')
+        }
+
+        const resetToken =jwt.sign({id:user._id},
+            process.env.JWT_SECRET ,
+             {expiresIn:"1hr"},
+        )
+        res.json({message:"Reset token sent successfully",
+        token:resetToken})
+
+        
+    }catch(error){
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+const resetPassword = async(req,res)=>{
+    try {
+        const { token, newPassword } = req.body;
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const id = decoded.id;
+
+        const user = await User.findById(id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // hash the newpassword
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        // Update password
+        user.password = hashedPassword;
+        await user.save();
+
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(400).json({ error: 'Reset token has expired' });
+        }
+        // console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+// const resetPasswordRequestController = async (req, res, next) => {
+//     const requestPasswordResetService = await requestPasswordReset(
+//       req.body.email
+//     );
+//     return res.json(requestPasswordResetService);
+//   };
   
-  const resetPasswordController = async (req, res, next) => {
-    const resetPasswordService = await resetPassword(
-      req.body.id,
-      req.body.token,
-      req.body.password
-    );
-    return res.json(resetPasswordService);
-  };
+//   const resetPasswordController = async (req, res, next) => {
+//     const resetPasswordService = await resetPassword(
+//       req.body.id,
+//       req.body.token,
+//       req.body.password
+//     );
+//     return res.json(resetPasswordService);
+//   };
 
 module.exports={
     register,
@@ -223,5 +271,8 @@ module.exports={
     deleteProfile,
     getAllUsers,
     getUserById,
-    resetPasswordRequestController,
-    resetPasswordController};
+    forgetPassword,
+    resetPassword,
+    // resetPasswordRequestController,
+    // resetPasswordController
+};

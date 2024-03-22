@@ -11,8 +11,10 @@ const {
     deleteProfile,
     getAllUsers,
     getUserById,
-    resetPasswordRequestController,
-    resetPasswordController}= require('../controllers/UserController');
+    forgetPassword,
+    resetPassword,
+    
+   }= require('../controllers/UserController');
 
 const {createUser,
        updateUser,
@@ -29,8 +31,8 @@ router.get('/getbyid/:id',protect,getUserById);
 router.put('/updateProfile/:id', protect, updateProfile);
 router.delete('/deleteProfile/:id', protect,deleteProfile);
 
-router.put('/resetPasswordRequest', resetPasswordRequestController,);
-router.put('/resetPassword', resetPasswordController,);
+router.post('/forgetPassword', forgetPassword); 
+router.post('/resetPassword', resetPassword);
 
 //admin and superadmin can access all users data 
 router.get('/getAllUsers',protect,restrict('admin','superadmin'),getAllUsers);
