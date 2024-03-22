@@ -1,5 +1,5 @@
 const mongoose = require( 'mongoose' );
-const {isEmail} = require( "validator" );
+// const {isEmail} = require( "validator" );
 const crypto = require('crypto')
 
 const userSchema = mongoose.Schema({
@@ -12,7 +12,6 @@ const userSchema = mongoose.Schema({
         unique:true,
         lowercase: true,
         required:true,
-        validate:[isEmail,"Please enter a valid email"]
     },
     password:{
         type:String,
@@ -26,22 +25,22 @@ const userSchema = mongoose.Schema({
     },
     username:{
         type:String,
-        required:true,
+        // required:true,
         unique:true
     },
     phoneNumber:{
-        type:String,
-        required:true
+        type:Number,
+        // required:true
     },
     role:{
         type:String,
         enum:['tenant', 'admin','landlord','superadmin','broker'],
-        required:true,
+        // required:true,
         default:'tenant'
     },
     mainAddress:{
         type:String,
-        required:true
+        // required:true
     },
     
     broker: {

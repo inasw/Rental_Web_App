@@ -9,6 +9,10 @@ const register = async(req,res)=>{
 try{
     const {name,email,password,username,mainAddress,phoneNumber,role,commissionRate} = req.body;
 
+    // if(role == 'admin' || role == 'superadmin'){
+    //     res.status(400).json({error:"You can't register as admin or superadmin"})
+    // }
+
     if(!name || !email || !password ||! username|| !mainAddress||!phoneNumber){
         res.status(400).json({error:"Please fill all fields"});
      } 
@@ -18,30 +22,30 @@ try{
         res.status(400).json({error:"User already exists"})
      }
 
-     if (role === 'broker' && commissionRate === undefined) {
-        return res.status(400).json({ error: "Commission rate is required for brokers" });
-    }
+    //  if (role === 'broker' && commissionRate === undefined) {
+    //     return res.status(400).json({ error: "Commission rate is required for brokers" });
+    // }
 
         // create user and hash password
      const salt = await bcrypt.genSalt(10)
      const hashedPassword =await bcrypt.hash(password,salt)
 
      let user;
-     if(role === 'broker'){
+    //  if(role === 'broker'){
     
-        user = await User.create({
-           name,
-           email,
-           password:hashedPassword,
-           username,
-           mainAddress,
-           phoneNumber, 
-           role,
-           broker: {
-            commissionRate
-            }
-        }) 
-     } else{
+    //     user = await User.create({
+    //        name,
+    //        email,
+    //        password:hashedPassword,
+    //        username,
+    //        mainAddress,
+    //        phoneNumber, 
+    //        role,
+    //        broker: {
+    //         commissionRate
+    //         }
+    //     }) 
+    //  } else{
         user = await User.create({
             name,
             email,
@@ -51,7 +55,7 @@ try{
             phoneNumber, 
             role,
      })
-    }
+    // }
 
      if(user){
         res.status(201).json({
@@ -74,8 +78,9 @@ try{
     }
     };
 
+
     // getProfile
-    const getProfile =asynchandler(async(req,res)=>{
+    const getProfile = asynchandler(async(req,res)=>{
         try {
             res.json(req.user); 
           } catch (error) {
@@ -83,8 +88,17 @@ try{
               message: 'Profile not found'
             });
           }   
-        // res.json(req.user)   
     })
+
+    // getProfilebyId
+    const getUserById = asynchandler(async (req, res) => {
+        const user = await User.findById(req.params.id).select("-password")
+        if (user) {
+          res.status(200).json(user)
+        } else {
+          res.status(404).json({error: 'User not found'})
+        }
+      })
 
         // getAllUser
     const getAllUsers =  asynchandler(async (req, res) =>{
@@ -106,7 +120,7 @@ try{
             if (!user) {
                  res.status(404).json({ message: 'User not found' });
             }else{
-                res.status(200).json(updatedProfile);
+                res.status(200).json({message:'User updated successfully',updatedProfile});
             }
         
         } catch (err) {
@@ -117,15 +131,22 @@ try{
 
     // deleteProfile
     const deleteProfile = asynchandler(async(req,res)=>{
+        const {role,_id}= req.user
+        const {id}= req.params
+
         try {
+            if (role === 'admin' && _id.toString() === id) {
+                res.status(403).json({ error: 'You cannot delete your own account' });
+                return;
+              }
             const user = await User.findById(req.params.id);
             if (!user) {
                  res.status(404).json({ message: 'User not found' });
             }
-            // Check if the user has permission to delete the profile
-            // if (req.user.role !== 'user' && req.user.role !== user.role) {
-            //     return res.status(403).json({ message: 'Unauthorized' });
-            // }
+           
+            if (user.role === 'superadmin') {
+                res.status(403).json({ error: 'You cannot delete a superadmin account' });
+            }
 
             const deletedProfile = await User.findByIdAndRemove(req.params.id)
             res.json({ message: 'User deleted successfully' });
@@ -151,6 +172,22 @@ const login = async(req,res)=>{
         })
     }else{
         res.status(401).json({error:'Invalid username or password'})
+    }
+    }
+
+const adminLogin = async(req,res)=>{
+    const{email,password}= req.body
+
+    const user = await User.findOne({email})
+    if(user && (await bcrypt.compare(password,user.password))){
+        res.json({
+            _id:user.id,
+            name:user.name,
+            email:user.email,
+            token: generateToken(user._id)
+        })
+    }else{
+        res.status(401).json({error:'Invalid email or password'})
     }
     }
 
@@ -180,9 +217,11 @@ const resetPasswordRequestController = async (req, res, next) => {
 module.exports={
     register,
     login,
+    adminLogin,
     getProfile,
     updateProfile,
     deleteProfile,
     getAllUsers,
+    getUserById,
     resetPasswordRequestController,
     resetPasswordController};

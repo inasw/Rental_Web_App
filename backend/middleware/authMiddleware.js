@@ -15,11 +15,11 @@ const protect = asynchandler(async(req,res,next)=>{
 
             next();
     }catch (error){
-        res.status(401).json({error:"not authorized"})
+        res.status(401).json({error:"Not authorized"})
     }
 }
     if(!token){
-        res.status(401).json({error:"token not found"})
+        res.status(401).json({error:"Token not found"})
     }
 })
 

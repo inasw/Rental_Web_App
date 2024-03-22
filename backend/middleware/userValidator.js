@@ -1,7 +1,8 @@
 const Joi = require('joi')
+
 const userValidator = (req,res,next)=>{
     const schema = Joi.object({
-        name: Joi.string().required(),
+        name: Joi.string().pattern(new RegExp('^[a-zA-Z]+$')).required(),
         email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }).lowercase().required(),
         password: Joi.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?\":{}|<>]).*$/).min(8).max(30).messages({
             'string.pattern.base': `Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.`,
