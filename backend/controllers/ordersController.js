@@ -1,6 +1,7 @@
 const Joi = require("joi");
 const asyncHandler = require("express-async-handler");
 const Order = require("../model/ordersModel");
+const User = require("../model/userModel")
 
 const getAllOrders = asyncHandler(async (req, res) => {
   try {
@@ -14,10 +15,10 @@ const getAllOrders = asyncHandler(async (req, res) => {
 
 const makeOrder = async (req, res) => {
   const orders = await Order.create({
-    //tenantID: req.body.tenantID,
+    tenantID: req.user.id,
     date: req.body.date,
     bidPrice: req.body.bidPrice,
-   // houseEntityID: req.body.houseEntityID,
+    houseEntityID: req.body.houseEntityID,
     status: req.body.status,
   })
 
