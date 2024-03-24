@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const User = require("../models/userModel");
+const Renter = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 
 // Function to generate JWT token
@@ -10,13 +10,13 @@ const generateToken = (id) => {
   });
 };
 
-// Controller to register a new user
-const registerUser = asyncHandler(async (req, res) => {
+// Controller to register a new renter
+const registerRenter = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
 
   // Check if email is unique
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
+  const existingRenter = await Renter.findOne({ email });
+  if (existingRenter) {
     res.status(400).json({ error: "Email already exists" });
     return;
   }
@@ -25,8 +25,8 @@ const registerUser = asyncHandler(async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // Create the new user
-  const user = await User.create({
+  // Create the new renter
+  const renter = await Renter.create({
     name,
     email,
     password: hashedPassword,
@@ -34,61 +34,61 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    token: generateToken(user._id),
+    _id: renter._id,
+    name: renter.name,
+    email: renter.email,
+    role: renter.role,
+    token: generateToken(renter._id),
   });
 });
 
-// Controller to update user information
-const updateUser = asyncHandler(async (req, res) => {
-  const userId = req.params.id;
+// Controller to update renter information
+const updateRenter = asyncHandler(async (req, res) => {
+  const renterId = req.params.id;
   const { name, email, password } = req.body;
 
-  // Find the user by ID
-  const user = await User.findById(userId);
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
+  // Find the renter by ID
+  const renter = await Renter.findById(renterId);
+  if (!renter) {
+    res.status(404).json({ error: "Renter not found" });
     return;
   }
 
-  // Update user information
-  user.name = name || user.name;
-  user.email = email || user.email;
+  // Update renter information
+  renter.name = name || renter.name;
+  renter.email = email || renter.email;
   if (password) {
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
+    renter.password = await bcrypt.hash(password, salt);
   }
 
-  const updatedUser = await user.save();
+  const updatedRenter = await renter.save();
   res.json({
-    _id: updatedUser._id,
-    name: updatedUser.name,
-    email: updatedUser.email,
-    role: updatedUser.role,
+    _id: updatedRenter._id,
+    name: updatedRenter.name,
+    email: updatedRenter.email,
+    role: updatedRenter.role,
   });
 });
 
-// Controller to delete user account
-const deleteUser = asyncHandler(async (req, res) => {
-  const userId = req.params.id;
+// Controller to delete renter account
+const deleteRenter = asyncHandler(async (req, res) => {
+  const renterId = req.params.id;
 
-  // Find the user by ID
-  const user = await User.findById(userId);
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
+  // Find the renter by ID
+  const renter = await Renter.findById(renterId);
+  if (!renter) {
+    res.status(404).json({ error: "Renter not found" });
     return;
   }
 
-  // Delete the user
-  await user.remove();
-  res.json({ message: "User deleted successfully" });
+  // Delete the renter
+  await renter.remove();
+  res.json({ message: "Renter deleted successfully" });
 });
 
-// Controller to search and filter users
-const searchUsers = asyncHandler(async (req, res) => {
+// Controller to search and filter renters
+const searchRenters = asyncHandler(async (req, res) => {
   const { role, name, email } = req.query;
   let query = {};
 
@@ -96,66 +96,53 @@ const searchUsers = asyncHandler(async (req, res) => {
   if (name) query.name = { $regex: name, $options: "i" };
   if (email) query.email = { $regex: email, $options: "i" };
 
-  const users = await User.find(query);
-  res.json(users);
+  const renters = await Renter.find(query);
+  res.json(renters);
 });
 
-// Controller to block a user
-const blockUser = asyncHandler(async (req, res) => {
-  const userId = req.params.id;
+// Controller to block a renter
+const blockRenter = asyncHandler(async (req, res) => {
+  const renterId = req.params.id;
 
-  // Find the user by ID
-  const user = await User.findById(userId);
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
+  // Find the renter by ID
+  const renter = await Renter.findById(renterId);
+  if (!renter) {
+    res.status(404).json({ error: "Renter not found" });
     return;
   }
 
-  // Block the user
-  user.blocked = true;
-  await user.save();
-  res.json({ message: "User blocked successfully" });
+  // Block the Renter
+  renter.blocked = true;
+  await renter.save();
+  res.json({ message: "Renter blocked successfully" });
 });
 
-// Controller to unblock a user
-const unblockUser = asyncHandler(async (req, res) => {
-  const userId = req.params.id;
+// Controller to unblock a renter
+const unblockRenter = asyncHandler(async (req, res) => {
+  const renterId = req.params.id;
 
-  // Find the user by ID
-  const user = await User.findById(userId);
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
+  // Find the renter by ID
+  const renter = await Renter.findById(renterId);
+  if (!renter) {
+    res.status(404).json({ error: "Renter not found" });
     return;
   }
 
-  // Unblock the user
-  user.blocked = false;
-  await user.save();
-  res.json({ message: "User unblocked successfully" });
+  // Unblock the renter
+  renter.blocked = false;
+  await renter.save();
+  res.json({ message: "Renter unblocked successfully" });
 });
 
-
-  // Controller to create a new landlord
+// Controller to create a new landlord
 const createLandlord = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
 
-  // Check if email is unique
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    res.status(400).json({ error: "Email already exists" });
-    return;
-  }
-
-  // Hash the password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  // Create the new landlord
   const landlord = await User.create({
     name,
     email,
-    password: hashedPassword,
-    role: "Landlord",
+    password,
+    role: "landlord", // Assuming the role for a landlord is "landlord"
   });
 
   res.status(201).json({
@@ -163,7 +150,6 @@ const createLandlord = asyncHandler(async (req, res) => {
     name: landlord.name,
     email: landlord.email,
     role: landlord.role,
-    token: generateToken(landlord._id),
   });
 });
 
@@ -172,19 +158,16 @@ const updateLandlord = asyncHandler(async (req, res) => {
   const landlordId = req.params.id;
   const { name, email, password } = req.body;
 
-  // Find the landlord by ID
   const landlord = await User.findById(landlordId);
   if (!landlord) {
     res.status(404).json({ error: "Landlord not found" });
     return;
   }
 
-  // Update landlord information
   landlord.name = name || landlord.name;
   landlord.email = email || landlord.email;
   if (password) {
-    const salt = await bcrypt.genSalt(10);
-    landlord.password = await bcrypt.hash(password, salt);
+    landlord.password = password;
   }
 
   const updatedLandlord = await landlord.save();
@@ -200,62 +183,86 @@ const updateLandlord = asyncHandler(async (req, res) => {
 const deleteLandlord = asyncHandler(async (req, res) => {
   const landlordId = req.params.id;
 
-  // Find the landlord by ID
   const landlord = await User.findById(landlordId);
   if (!landlord) {
     res.status(404).json({ error: "Landlord not found" });
     return;
   }
 
-  // Delete the landlord
   await landlord.remove();
   res.json({ message: "Landlord deleted successfully" });
 });
 
 // Controller to create a new broker
 const createBroker = asyncHandler(async (req, res) => {
-  // Implementation code for creating a new broker
+  const { name, email, password } = req.body;
+
+  const broker = await User.create({
+    name,
+    email,
+    password,
+    role: "broker", // Assuming the role for a broker is "broker"
+  });
+
+  res.status(201).json({
+    _id: broker._id,
+    name: broker.name,
+    email: broker.email,
+    role: broker.role,
+  });
 });
 
 // Controller to update a broker
 const updateBroker = asyncHandler(async (req, res) => {
-  // Implementation code for updating a broker
+  const brokerId = req.params.id;
+  const { name, email, password } = req.body;
+
+  const broker = await User.findById(brokerId);
+  if (!broker) {
+    res.status(404).json({ error: "Broker not found" });
+    return;
+  }
+
+  broker.name = name || broker.name;
+  broker.email = email || broker.email;
+  if (password) {
+    broker.password = password;
+  }
+
+  const updatedBroker = await broker.save();
+  res.json({
+    _id: updatedBroker._id,
+    name: updatedBroker.name,
+    email: updatedBroker.email,
+    role: updatedBroker.role,
+  });
 });
 
 // Controller to delete a broker
 const deleteBroker = asyncHandler(async (req, res) => {
-  // Implementation code for deleting a broker
-});
+  const brokerId = req.params.id;
 
-// Controller to create a new renter
-const createRenter = asyncHandler(async (req, res) => {
-  // Implementation code for creating a new renter
-});
+  const broker = await User.findById(brokerId);
+  if (!broker) {
+    res.status(404).json({ error: "Broker not found" });
+    return;
+  }
 
-// Controller to update a renter
-const updateRenter = asyncHandler(async (req, res) => {
-  // Implementation code for updating a renter
-});
-
-// Controller to delete a renter
-const deleteRenter = asyncHandler(async (req, res) => {
-  // Implementation code for deleting a renter
+  await broker.remove();
+  res.json({ message: "Broker deleted successfully" });
 });
 
 module.exports = {
-  registerUser,
-  updateUser,
-  deleteUser,
-  searchUsers,
-  blockUser,
-  unblockUser,
+  registerRenter,
+  updateRenter,
+  deleteRenter,
+  searchRenters,
+  blockRenter,
+  unblockRenter,
   createLandlord,
   updateLandlord,
   deleteLandlord,
   createBroker,
   updateBroker,
   deleteBroker,
-  // createRenter,
-  // updateRenter,
-  // deleteRenter
 };

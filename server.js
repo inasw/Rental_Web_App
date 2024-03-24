@@ -18,3 +18,4 @@ const userRoutes = require('./routes/userRoutes');
 app.use('/api/users', userRoutes); 
 
 app.listen(port, () => console.log(`Server started on port ${port}`));
+
