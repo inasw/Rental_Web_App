@@ -1,9 +1,8 @@
 const asyncHandler = require("express-async-handler");
-const Feedback = require("../models/feedback");
+const Feedback = require("../model/feedbackModel");
 
 const submitFeedback = asyncHandler(async (req, res) => {
   const { renter, houseEntity, rating, comment } = req.body;
-
 
   const feedback = new Feedback({
     renter,
@@ -21,3 +20,19 @@ const getAllFeedbackForHouse = asyncHandler(async (req, res) => {
   res.json(feedback);
 });
 
+const getFeedbackById = asyncHandler(async (req, res) => {
+  const feedbackId = req.params.id;
+
+  const feedback = await Feedback.findById(feedbackId);
+  if (!feedback) {
+    return res.status(404).json({ message: "Feedback not found" });
+  }
+
+  res.json(feedback);
+});
+
+module.exports = {
+  submitFeedback,
+  getAllFeedbackForHouse,
+  getFeedbackById,
+};
