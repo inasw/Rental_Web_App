@@ -5,35 +5,35 @@ const Joi = require("joi");
 // Create a new house
 const createHouse = async (req, res) => {
   try {
-    const {
-      user,
-      location,
-      type,
-      category,
-      price,
-      description,
-      availability,
-      photos,
-      rating,
-    } = req.body;
+    const files = req.files;
+    console.log(req.user.role);
+    // Check if the role of the user is Landlord or Broker
+    if (req.user.role !== "landlord" && req.user.role !== "broker") {
+      return res.status(403).json({ error: "Not authorized" });
+    }
 
-    // Create a new house record
-    const house = new House({
-      user,
-      location,
-      type,
-      category,
-      price,
-      description,
-      availability,
-      photos,
-      rating,
+    const houseInstance = new House({
+      user: req.user.id,
+      location: req.body.location,
+      type: req.body.type,
+      category: req.body.category,
+      price: req.body.price,
+      description: req.body.description,
+      availability: req.body.availability,
+      photos: files.map((file) => `uploads/${file.filename}`),
+      rating: req.body.rating,
     });
 
-    // Save the house record to the database
-    await house.save();
+    // Save the house instance to the database
+    const savedHouse = await houseInstance.save();
 
-    res.status(201).json({ message: "House created successfully", house });
+    // Log the saved house to the console
+
+    // Return a response
+    return res.status(200).json({
+      message: "House details received, logged, and saved!",
+      house: savedHouse,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
@@ -66,34 +66,27 @@ const getHouseById = async (req, res) => {
   }
 };
 
-// Update a house
 const updateHouseWithPhotos = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      user,
-      location,
-      type,
-      category,
-      price,
-      description,
-      availability,
-      photos,
-      rating,
-    } = req.body;
+    const files = req.files;
+
+    if (req.user.role !== "landlord" && req.user.role !== "broker") {
+      return res.status(403).json({ error: "Not authorized" });
+    }
 
     // Find the house by ID and update its details
     const house = await House.findByIdAndUpdate(
       id,
       {
-        user,
+        user: req.user.id,
         location,
         type,
         category,
         price,
         description,
         availability,
-        photos,
+        photos: files.map((file) => `uploads/${file.filename}`),
         rating,
       },
       { new: true }
@@ -105,58 +98,32 @@ const updateHouseWithPhotos = async (req, res) => {
 
     res.json({ message: "House updated successfully", house });
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    console.log(error);
+    res.status(500).json({ error });
   }
 };
-
-const updateHouseWithoutPhotos = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      user,
-      location,
-      type,
-      category,
-      price,
-      description,
-      availability,
-      rating,
-    } = req.body;
-
-    // Find the house by ID and update its details
-    const house = await House.findByIdAndUpdate(
-      id,
-      {
-        user,
-        location,
-        type,
-        category,
-        price,
-        description,
-        availability,
-        rating,
-      },
-      { new: true }
-    );
-
-    if (!house) {
-      return res.status(404).json({ error: "House not found" });
-    }
-
-    res.json({ message: "House updated successfully", house });
-  } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
 // Delete a house
 const deleteHouse = async (req, res) => {
   try {
     const { id } = req.params;
-    const house = await House.findByIdAndDelete(id);
+    const house = await House.findById(id);
+
+    // Check if the role of the user is "tenant"
+    if (req.user.role === "tenant") {
+      return res.status(403).json({ error: "Can't deleate a house" });
+    }
+
+    if (req.user.role !== "Landlord" || req.user.role !== "Broker") {
+      if (house.user.toString() !== req.user.id) {
+        return res.status(403).json({ error: "Wrong house " });
+      }
+    }
+
     if (!house) {
       return res.status(404).json({ error: "House not found" });
     }
+
+    await house.remove();
     res.json({ message: "House deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -167,9 +134,12 @@ const deleteHouse = async (req, res) => {
 const searchHouses = async (req, res) => {
   try {
     const { location } = req.query;
-    const houses = await House.find({ location });
+    const houses = await House.find({
+      location: { $regex: location, $options: "i" },
+    });
     res.json({ houses });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -179,7 +149,6 @@ module.exports = {
   getAllHouses,
   getHouseById,
   updateHouseWithoutPhotos,
-  updateHouseWithPhotos,
   deleteHouse,
   searchHouses,
 };
