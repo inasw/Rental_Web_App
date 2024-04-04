@@ -1,44 +1,46 @@
-// User Routes (userRoutes.js)
 const express = require("express");
 const router = express.Router();
-const { 
-  createLandlord,
-  updateLandlord,
-  deleteLandlord,
-  createBroker,
-  updateBroker,
-  deleteBroker,
-  createRenter,
-  updateRenter,
-  // deleteRenter,
-  registerRenter,
-  // updateRenter,
-  deleteRenter,
-  // updateUser,
-  // deleteUser,
-  searchRenters,
-  blockRenter,
-  unblockRenter,
-} = require("../controllers/userController");
-const { protect, isAdmin } = require("../middleware/authMiddleware");
+const {protect,restrict} =require('../middleware/authMiddleware')
+const {userValidator} = require('../middleware/userValidator')
+const {
+    register,
+    login,
+    adminLogin,
+    getProfile,
+    updateProfile,
+    deleteProfile,
+    getAllUsers,
+    getUserById,
+    forgetPassword,
+    resetPassword,
+    
+   }= require('../controllers/UserController');
 
-// Admin Routes
-router.post("/landlords", protect, isAdmin, createLandlord);
-router.put("/landlords/:id", protect, isAdmin, updateLandlord);
-router.delete("/landlords/:id", protect, isAdmin, deleteLandlord);
+const {createUser,
+       updateUser,
+       deleteUser,
+       createAdmin} = require('../controllers/userAccountController')
 
-router.post("/brokers", protect, isAdmin, createBroker);
-router.put("/brokers/:id", protect, isAdmin, updateBroker);
-router.delete("/brokers/:id", protect, isAdmin, deleteBroker);
 
-// Public Routes
-router.post("/renters", protect, isAdmin, registerRenter);
+router.post('/signup',userValidator,register);
+router.post('/login',login);
+router.post('/adminLogin',adminLogin);
 
-// Protected Routes
-router.put("/renters/:id", protect, updateRenter);
-router.delete("/renters/:id", protect, isAdmin, deleteRenter);
-router.get("/renters/search", protect, isAdmin, searchRenters);
-router.put("/renters/:id/block", protect, isAdmin, blockRenter);
-router.put("/renters/:id/unblock", protect, isAdmin, unblockRenter);
+router.get('/getProfile',protect,getProfile);
+router.get('/getbyid/:id',protect,getUserById);
+router.put('/updateProfile/:id', protect, updateProfile);
+router.delete('/deleteProfile/:id', protect,deleteProfile);
 
+router.post('/forgetPassword', forgetPassword); 
+router.post('/resetPassword', resetPassword);
+
+//admin and superadmin can access all users data 
+router.get('/getAllUsers',protect,restrict('admin','superadmin'),getAllUsers);
+router.post('/createAdmin',protect,restrict( 'superadmin'), createAdmin)
+router.put('/updateUser/:id',protect,restrict('superadmin','admin'), updateUser)
+router.delete('/deleteUser/:id',protect,restrict( 'superadmin','admin'), deleteUser)
+router.post('/createUser',protect,restrict( 'superadmin','admin'), createUser)
+      
+                  
+     
 module.exports = router;

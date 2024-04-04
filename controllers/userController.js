@@ -1,268 +1,313 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const Renter = require("../models/userModel");
-const asyncHandler = require("express-async-handler");
+const jwt = require('jsonwebtoken')
+const bcrypt = require('bcryptjs')
+const asynchandler = require("express-async-handler")
+const User = require('../models/userModel') 
 
-// Function to generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
-  });
-};
 
-// Controller to register a new renter
-const registerRenter = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+const userRoles = {
+    SUPER_ADMIN: 'Super Admin',
+    ADMIN: 'Admin',
+    LANDLORD: 'Landlord',
+    BROKER: 'Broker',
+    RENTER: 'Renter'
+  };
+  
+  // Define permissions for each role
+  const permissions = {
+    SUPER_ADMIN: {
+      createAccount: true,
+      updateAccount: true,
+      deleteAccount: true,
+      blockUser: true,
+      unblockUser: true,
+      // Add more permissions as needed
+    },
+    ADMIN: {
+      createAccount: true,
+      updateAccount: true,
+      deleteAccount: true,
+      blockUser: true,
+      unblockUser: true,
+      // Add more permissions as needed
+    },
+    LANDLORD: {
+      listProperties: true,
+      editProperties: true,
+      deleteProperties: true,
+      manageRequests: true,
+      // Add more permissions as needed
+    },
+    BROKER: {
+      listProperties: true,
+      manageRequests: true,
+      // Add more permissions as needed
+    },
+    RENTER: {
+      searchProperties: true,
+      viewPropertyDetails: true,
+      initiateRequest: true,
+      manageProfile: true,
+      viewHistory: true,
+      // Add more permissions as needed
+    }
+  };
+  
+ 
+//   Register
+const register = async(req,res)=>{
+try{
+    const {name,email,password,username,mainAddress,phoneNumber,role,commissionRate} = req.body;
 
-  // Check if email is unique
-  const existingRenter = await Renter.findOne({ email });
-  if (existingRenter) {
-    res.status(400).json({ error: "Email already exists" });
-    return;
-  }
+    // if(role == 'admin' || role == 'superadmin'){
+    //     res.status(400).json({error:"You can't register as admin or superadmin"})
+    // }
 
-  // Hash the password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+    if(!name || !email || !password ||! username|| !mainAddress||!phoneNumber){
+        res.status(400).json({error:"Please fill all fields"});
+     } 
 
-  // Create the new renter
-  const renter = await Renter.create({
-    name,
-    email,
-    password: hashedPassword,
-    role,
-  });
+     const userExists = await User.findOne({email})
+     if(userExists){
+        res.status(400).json({error:"User already exists"})
+     }
 
-  res.status(201).json({
-    _id: renter._id,
-    name: renter.name,
-    email: renter.email,
-    role: renter.role,
-    token: generateToken(renter._id),
-  });
-});
+    //  if (role === 'broker' && commissionRate === undefined) {
+    //     return res.status(400).json({ error: "Commission rate is required for brokers" });
+    // }
 
-// Controller to update renter information
-const updateRenter = asyncHandler(async (req, res) => {
-  const renterId = req.params.id;
-  const { name, email, password } = req.body;
+        // create user and hash password
+     const salt = await bcrypt.genSalt(10)
+     const hashedPassword =await bcrypt.hash(password,salt)
 
-  // Find the renter by ID
-  const renter = await Renter.findById(renterId);
-  if (!renter) {
-    res.status(404).json({ error: "Renter not found" });
-    return;
-  }
+     let user;
+    //  if(role === 'broker'){
+    
+    //     user = await User.create({
+    //        name,
+    //        email,
+    //        password:hashedPassword,
+    //        username,
+    //        mainAddress,
+    //        phoneNumber, 
+    //        role,
+    //        broker: {
+    //         commissionRate
+    //         }
+    //     }) 
+    //  } else{
+        user = await User.create({
+            name,
+            email,
+            password:hashedPassword,
+            username,
+            mainAddress,
+            phoneNumber, 
+            role,
+     })
+    // }
 
-  // Update renter information
-  renter.name = name || renter.name;
-  renter.email = email || renter.email;
-  if (password) {
-    const salt = await bcrypt.genSalt(10);
-    renter.password = await bcrypt.hash(password, salt);
-  }
+     if(user){
+        res.status(201).json({
+            _id : user.id,
+            name:user.name,
+            username:user.username,
+            email:user.email,
+            phone:user.phoneNumber,
+            address:user.mainAddress,
+            token:generateToken(user._id),
+        })
 
-  const updatedRenter = await renter.save();
-  res.json({
-    _id: updatedRenter._id,
-    name: updatedRenter.name,
-    email: updatedRenter.email,
-    role: updatedRenter.role,
-  });
-});
+    }else
+     {
+        res.status(400).json({message:"User not created"})
+     }
+    } catch (error) {
+        console.error(error);
+        // res.status(500).json({ error: "Internal Server Error" });
+    }
+    };
 
-// Controller to delete renter account
-const deleteRenter = asyncHandler(async (req, res) => {
-  const renterId = req.params.id;
 
-  // Find the renter by ID
-  const renter = await Renter.findById(renterId);
-  if (!renter) {
-    res.status(404).json({ error: "Renter not found" });
-    return;
-  }
+    // getProfile
+    const getProfile = asynchandler(async(req,res)=>{
+        try {
+            res.json(req.user); 
+          } catch (error) {
+            res.status(400).json({ 
+              message: 'Profile not found'
+            });
+          }   
+    })
 
-  // Delete the renter
-  await renter.remove();
-  res.json({ message: "Renter deleted successfully" });
-});
+    // getProfilebyId
+    const getUserById = asynchandler(async (req, res) => {
+        const user = await User.findById(req.params.id).select("-password")
+        if (user) {
+          res.status(200).json(user)
+        } else {
+          res.status(404).json({error: 'User not found'})
+        }
+      })
 
-// Controller to search and filter renters
-const searchRenters = asyncHandler(async (req, res) => {
-  const { role, name, email } = req.query;
-  let query = {};
+        // getAllUser
+    const getAllUsers =  asynchandler(async (req, res) =>{
+       try { const users = await User.find()
+        res.status(200).json(users);
+        }  catch (err) {
+            res.status(500).json({error:'Internal server error'})
+        }
+    })
 
-  if (role) query.role = role;
-  if (name) query.name = { $regex: name, $options: "i" };
-  if (email) query.email = { $regex: email, $options: "i" };
+    // updateProfile
+    const updateProfile = asynchandler(async(req,res)=>{
+        const user = await User.findById(req.user.id)
+        if(!user){
+            res.status(401).json({error:"user not found"})
+        }
+        try {
+            const updatedProfile = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+            if (!user) {
+                 res.status(404).json({ message: 'User not found' });
+            }else{
+                res.status(200).json({message:'User updated successfully',updatedProfile});
+            }
+        
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: 'Internal Server Error' });
+        }
+    })
 
-  const renters = await Renter.find(query);
-  res.json(renters);
-});
+    // deleteProfile
+    const deleteProfile = asynchandler(async(req,res)=>{
+        const {role,_id}= req.user
+        const {id}= req.params
 
-// Controller to block a renter
-const blockRenter = asyncHandler(async (req, res) => {
-  const renterId = req.params.id;
+        try {
+            if (role === 'admin' && _id.toString() === id) {
+                res.status(403).json({ error: 'You cannot delete your own account' });
+                return;
+              }
+            const user = await User.findById(req.params.id);
+            if (!user) {
+                 res.status(404).json({ message: 'User not found' });
+            }
+           
+            if (user.role === 'superadmin') {
+                res.status(403).json({ error: 'You cannot delete a superadmin account' });
+            }
 
-  // Find the renter by ID
-  const renter = await Renter.findById(renterId);
-  if (!renter) {
-    res.status(404).json({ error: "Renter not found" });
-    return;
-  }
+            const deletedProfile = await User.findByIdAndRemove(req.params.id)
+            res.json({ message: 'User deleted successfully' });
 
-  // Block the Renter
-  renter.blocked = true;
-  await renter.save();
-  res.json({ message: "Renter blocked successfully" });
-});
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: 'Internal Server Error' });
+        }
+    })
 
-// Controller to unblock a renter
-const unblockRenter = asyncHandler(async (req, res) => {
-  const renterId = req.params.id;
+    // Login
+const login = async(req,res)=>{
+    const{username,password}= req.body
 
-  // Find the renter by ID
-  const renter = await Renter.findById(renterId);
-  if (!renter) {
-    res.status(404).json({ error: "Renter not found" });
-    return;
-  }
+    const user = await User.findOne({username})
+    if(user && (await bcrypt.compare(password,user.password))){
+        res.json({
+            _id:user.id,
+            name:user.name,
+            username:user.username,
+            email:user.email,
+            token: generateToken(user._id)
+        })
+    }else{
+        res.status(401).json({error:'Invalid username or password'})
+    }
+    }
 
-  // Unblock the renter
-  renter.blocked = false;
-  await renter.save();
-  res.json({ message: "Renter unblocked successfully" });
-});
+const adminLogin = async(req,res)=>{
+    const{email,password}= req.body
 
-// Controller to create a new landlord
-const createLandlord = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+    const user = await User.findOne({email})
+    if(user && (await bcrypt.compare(password,user.password))){
+        res.json({
+            _id:user.id,
+            name:user.name,
+            email:user.email,
+            token: generateToken(user._id)
+        })
+    }else{
+        res.status(401).json({error:'Invalid email or password'})
+    }
+    }
 
-  const landlord = await User.create({
-    name,
-    email,
-    password,
-    role: "landlord", // Assuming the role for a landlord is "landlord"
-  });
+const generateToken = (id) =>{
+    return jwt.sign({id},
+            process.env.JWT_SECRET ,
+             {expiresIn:"10d"},
+        )
+}
 
-  res.status(201).json({
-    _id: landlord._id,
-    name: landlord.name,
-    email: landlord.email,
-    role: landlord.role,
-  });
-});
+const forgetPassword = async(req,res) =>{
+    try{
+        const user = await User.findOne({email:req.body.email})
+        if(!user){
+            res.status(400).json('No account with this email found')
+        }
 
-// Controller to update a landlord
-const updateLandlord = asyncHandler(async (req, res) => {
-  const landlordId = req.params.id;
-  const { name, email, password } = req.body;
+        const resetToken =jwt.sign({id:user._id},
+            process.env.JWT_SECRET ,
+             {expiresIn:"1hr"},
+        )
+        res.json({message:"Reset token sent successfully",
+        token:resetToken})
 
-  const landlord = await User.findById(landlordId);
-  if (!landlord) {
-    res.status(404).json({ error: "Landlord not found" });
-    return;
-  }
+        
+    }catch(error){
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
 
-  landlord.name = name || landlord.name;
-  landlord.email = email || landlord.email;
-  if (password) {
-    landlord.password = password;
-  }
+const resetPassword = async(req,res)=>{
+    try {
+        const { token, newPassword } = req.body;
 
-  const updatedLandlord = await landlord.save();
-  res.json({
-    _id: updatedLandlord._id,
-    name: updatedLandlord.name,
-    email: updatedLandlord.email,
-    role: updatedLandlord.role,
-  });
-});
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const id = decoded.id;
 
-// Controller to delete a landlord
-const deleteLandlord = asyncHandler(async (req, res) => {
-  const landlordId = req.params.id;
+        const user = await User.findById(id);
 
-  const landlord = await User.findById(landlordId);
-  if (!landlord) {
-    res.status(404).json({ error: "Landlord not found" });
-    return;
-  }
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
 
-  await landlord.remove();
-  res.json({ message: "Landlord deleted successfully" });
-});
+        // hash the newpassword
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        // Update password
+        user.password = hashedPassword;
+        await user.save();
 
-// Controller to create a new broker
-const createBroker = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(400).json({ error: 'Reset token has expired' });
+        }
+        // console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
 
-  const broker = await User.create({
-    name,
-    email,
-    password,
-    role: "broker", // Assuming the role for a broker is "broker"
-  });
 
-  res.status(201).json({
-    _id: broker._id,
-    name: broker.name,
-    email: broker.email,
-    role: broker.role,
-  });
-});
 
-// Controller to update a broker
-const updateBroker = asyncHandler(async (req, res) => {
-  const brokerId = req.params.id;
-  const { name, email, password } = req.body;
+module.exports={
+    register,
+    login,
+    adminLogin,
+    getProfile,
+    updateProfile,
+    deleteProfile,
+    getAllUsers,
+    getUserById,
+    forgetPassword,
+    resetPassword,
 
-  const broker = await User.findById(brokerId);
-  if (!broker) {
-    res.status(404).json({ error: "Broker not found" });
-    return;
-  }
-
-  broker.name = name || broker.name;
-  broker.email = email || broker.email;
-  if (password) {
-    broker.password = password;
-  }
-
-  const updatedBroker = await broker.save();
-  res.json({
-    _id: updatedBroker._id,
-    name: updatedBroker.name,
-    email: updatedBroker.email,
-    role: updatedBroker.role,
-  });
-});
-
-// Controller to delete a broker
-const deleteBroker = asyncHandler(async (req, res) => {
-  const brokerId = req.params.id;
-
-  const broker = await User.findById(brokerId);
-  if (!broker) {
-    res.status(404).json({ error: "Broker not found" });
-    return;
-  }
-
-  await broker.remove();
-  res.json({ message: "Broker deleted successfully" });
-});
-
-module.exports = {
-  registerRenter,
-  updateRenter,
-  deleteRenter,
-  searchRenters,
-  blockRenter,
-  unblockRenter,
-  createLandlord,
-  updateLandlord,
-  deleteLandlord,
-  createBroker,
-  updateBroker,
-  deleteBroker,
 };

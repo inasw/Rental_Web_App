@@ -29,13 +29,6 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-const isAdmin = asyncHandler(async (req, res, next) => {
-  // Check if the current user is an admin or super admin
-  if (req.user && (req.user.role === "admin" || req.user.role === "SuperAdmin")) {
-    next();
-  } else {
-    res.status(403).json({ error: "Not authorized as an admin" });
-  }
-});
 
-module.exports = { protect, isAdmin };
+
+module.exports = { protect };

@@ -1,6 +1,3 @@
-const express=require('express')
-const model=require(../models/userModel);
-
 const userRoles = {
     SUPER_ADMIN: 'Super Admin',
     ADMIN: 'Admin',
@@ -9,6 +6,7 @@ const userRoles = {
     RENTER: 'Renter'
   };
   
+  // Define permissions for each role
   const permissions = {
     SUPER_ADMIN: {
       createAccount: true,
@@ -19,7 +17,11 @@ const userRoles = {
       // Add more permissions as needed
     },
     ADMIN: {
-      verifyUser: true,
+      createAccount: true,
+      updateAccount: true,
+      deleteAccount: true,
+      blockUser: true,
+      unblockUser: true,
       // Add more permissions as needed
     },
     LANDLORD: {
@@ -42,18 +44,10 @@ const userRoles = {
       viewHistory: true,
       // Add more permissions as needed
     }
+  }; 
+  
+  module.exports = {
+    permissions,
+    userRoles
   };
-  
-  // Example usage:
-  const user = {
-    role: userRoles.SUPER_ADMIN
-  };
-  
-  const userPermissions = permissions[user.role];
-  
-  console.log(`User role: ${user.role}`);
-  console.log('Permissions:');
-  for (const [permission, value] of Object.entries(userPermissions)) {
-    console.log(`${permission}: ${value}`);
-  }
   
