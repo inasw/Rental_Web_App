@@ -110,12 +110,12 @@ const deleteHouse = async (req, res) => {
 
     // Check if the role of the user is "tenant"
     if (req.user.role === "tenant") {
-      return res.status(403).json({ error: "Can't deleate a house" });
+      return res.status(403).json({ error: "Cannot delete a house" });
     }
 
     if (req.user.role !== "Landlord" || req.user.role !== "Broker") {
       if (house.user.toString() !== req.user.id) {
-        return res.status(403).json({ error: "Wrong house " });
+        return res.status(403).json({ error: "Wrong house" });
       }
     }
 
@@ -123,9 +123,10 @@ const deleteHouse = async (req, res) => {
       return res.status(404).json({ error: "House not found" });
     }
 
-    await house.remove();
+    await house.deleteOne(); // Use deleteOne method instead of remove
     res.json({ message: "House deleted successfully" });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
