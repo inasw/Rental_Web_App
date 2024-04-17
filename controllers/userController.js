@@ -3,64 +3,12 @@ const bcrypt = require('bcryptjs')
 const asynchandler = require("express-async-handler")
 const User = require('../models/userModel') 
 
-
-const userRoles = {
-    SUPER_ADMIN: 'Super Admin',
-    ADMIN: 'Admin',
-    LANDLORD: 'Landlord',
-    BROKER: 'Broker',
-    RENTER: 'Renter'
-  };
-  
-  // Define permissions for each role
-  const permissions = {
-    SUPER_ADMIN: {
-      createAccount: true,
-      updateAccount: true,
-      deleteAccount: true,
-      blockUser: true,
-      unblockUser: true,
-      // Add more permissions as needed
-    },
-    ADMIN: {
-      createAccount: true,
-      updateAccount: true,
-      deleteAccount: true,
-      blockUser: true,
-      unblockUser: true,
-      // Add more permissions as needed
-    },
-    LANDLORD: {
-      listProperties: true,
-      editProperties: true,
-      deleteProperties: true,
-      manageRequests: true,
-      // Add more permissions as needed
-    },
-    BROKER: {
-      listProperties: true,
-      manageRequests: true,
-      // Add more permissions as needed
-    },
-    RENTER: {
-      searchProperties: true,
-      viewPropertyDetails: true,
-      initiateRequest: true,
-      manageProfile: true,
-      viewHistory: true,
-      // Add more permissions as needed
-    }
-  };
-  
  
 //   Register
 const register = async(req,res)=>{
 try{
     const {name,email,password,username,mainAddress,phoneNumber,role,commissionRate} = req.body;
 
-    // if(role == 'admin' || role == 'superadmin'){
-    //     res.status(400).json({error:"You can't register as admin or superadmin"})
-    // }
 
     if(!name || !email || !password ||! username|| !mainAddress||!phoneNumber){
         res.status(400).json({error:"Please fill all fields"});
@@ -71,9 +19,6 @@ try{
         res.status(400).json({error:"User already exists"})
      }
 
-    //  if (role === 'broker' && commissionRate === undefined) {
-    //     return res.status(400).json({ error: "Commission rate is required for brokers" });
-    // }
 
         // create user and hash password
      const salt = await bcrypt.genSalt(10)
@@ -295,10 +240,121 @@ const resetPassword = async(req,res)=>{
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+// Create User
+const createUser = async (req, res) => {
+    try {
+        const { name, email, password, username, mainAddress, phoneNumber, role } = req.body;
 
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            res.status(400).json({ error: "User already exists" });
+        }
 
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-module.exports={
+        const user = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            username,
+            mainAddress,
+            phoneNumber,
+            role,
+        });
+
+        if (user) {
+            res.status(201).json({
+                _id: user.id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                phone: user.phoneNumber,
+                address: user.mainAddress,
+                token: generateToken(user._id),
+            });
+        } else {
+            res.status(400).json({ message: "User not created" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+// Update User
+const updateUser = async (req, res) => {
+    try {
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updatedUser) {
+            res.status(404).json({ message: 'User not found' });
+        } else {
+            res.status(200).json({ message: 'User updated successfully', updatedUser });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+// Delete User
+const deleteUser = async (req, res) => {
+    try {
+        const deletedUser = await User.findByIdAndRemove(req.params.id);
+        if (!deletedUser) {
+            res.status(404).json({ message: 'User not found' });
+        } else {
+            res.status(200).json({ message: 'User deleted successfully' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+// Create Admin
+const createAdmin = async (req, res) => {
+    try {
+        const { name, email, password, username, mainAddress, phoneNumber } = req.body;
+
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            res.status(400).json({ error: "User already exists" });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const user = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            username,
+            mainAddress,
+            phoneNumber,
+            role: 'admin',
+        });
+
+        if (user) {
+            res.status(201).json({
+                _id: user.id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                phone: user.phoneNumber,
+                address: user.mainAddress,
+                token: generateToken(user._id),
+            });
+        } else {
+            res.status(400).json({ message: "Admin not created" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+module.exports = {
     register,
     login,
     adminLogin,
@@ -309,5 +365,12 @@ module.exports={
     getUserById,
     forgetPassword,
     resetPassword,
-
+    createUser,
+    updateUser,
+    deleteUser,
+    createAdmin,
 };
+
+
+
+
