@@ -21,7 +21,7 @@ const {
      
      
      // Define routes for user functionalities
-router.get('/api/users', getAllUsers);
+// router.get('/api/users', getAllUsers);
 router.post('/api/users/register', register);
 router.post('/api/users/login', login);
 router.post('/api/users/adminLogin', adminLogin);
@@ -33,7 +33,7 @@ router.post('/api/users/forget-password', forgetPassword);
 router.post('/api/users/reset-password', resetPassword);
 
 // routing for Role based acesses 
-router.post('/signup',userValidator,register);
+// router.post('/signup',userValidator,register);
 router.post('/login',login);
 router.post('/adminLogin',adminLogin); 
 // 

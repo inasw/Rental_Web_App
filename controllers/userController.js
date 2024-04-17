@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const asynchandler = require("express-async-handler")
 const User = require('../models/userModel') 
+const {sendEmail}=require("../utils/email")
 
  
 //   Register
