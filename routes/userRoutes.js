@@ -32,11 +32,6 @@ router.get('/api/users/:id', getUserById);
 router.post('/api/users/forget-password', forgetPassword);
 router.post('/api/users/reset-password', resetPassword);
 
-// routing for Role based acesses 
-// router.post('/signup',userValidator,register);
-router.post('/login',login);
-router.post('/adminLogin',adminLogin); 
-// 
 router.get('/getProfile',protect,getProfile);
 router.get('/getbyid/:id',protect,getUserById);
 router.put('/updateProfile/:id', protect, updateProfile);
@@ -46,11 +41,11 @@ router.post('/forgetPassword', forgetPassword);
 router.post('/resetPassword', resetPassword);
 
 //admin and superadmin can access all users data 
-router.get('/getAllUsers',protect,permittedTo('admin','superadmin'),getAllUsers);
-router.post('/createAdmin',protect,permittedTo( 'superadmin'), createAdmin)
-router.put('/updateUser/:id',protect,permittedTo('superadmin','admin'), updateUser)
-router.delete('/deleteUser/:id',protect,permittedTo( 'superadmin','admin'), deleteUser)
-router.post('/createUser',protect,permittedTo( 'superadmin','admin'), createUser)
+router.get('/api/getAllUsers',protect,permittedTo('admin','superadmin'),getAllUsers);
+router.post('/api/createAdmin',protect,permittedTo( 'superadmin'), createAdmin)
+router.put('/api/updateUser/:id',protect,permittedTo('superadmin','admin'), updateUser)
+router.delete('api//deleteUser/:id',protect,permittedTo( 'superadmin','admin'), deleteUser)
+router.post('/api/createUser',protect,permittedTo( 'superadmin','admin'), createUser)
       
                   
      

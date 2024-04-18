@@ -13,6 +13,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Use userRouter for user functionalities
-app.use('/api/users', userRouter); // Change '/api/users/userRouter' to '/api/users'
+app.use('/', userRouter); // Change '/api/users/userRouter' to '/api/users'
 
 app.listen(port, () => console.log(`Server started on port ${port}`));
