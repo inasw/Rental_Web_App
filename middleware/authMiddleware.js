@@ -1,31 +1,29 @@
 const jwt = require("jsonwebtoken");
-const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const { renewToken } = require("../utils/generateToken");
 
-const protect = asyncHandler(async (req, res, next) => {
-  let accessToken = req.cookies.accessToken;
-
+const protect = async (req, res, next) => {
   try {
-    if (accessToken) {
-      const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select("-password");
-      next();
-    } else {
+    let accessToken = req.cookies ? req.cookies.accessToken : undefined;
+
+    if (!accessToken) {
       const { exist, id } = renewToken(req, res);
       if (exist) {
-        req.user = await User.findById(id).select("-password");
-        next();
+        accessToken = req.cookies.accessToken;
       } else {
         res.status(401);
         throw new Error("You are not logged in");
       }
     }
+
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select("-password");
+    next();
   } catch (error) {
     res.status(401);
-    throw new Error("Not authorized, token failed");
+    next(error); // Pass the error to the error handling middleware
   }
-});
+};
 
 const permittedTo = (...roles) => {
   return (req, res, next) => {

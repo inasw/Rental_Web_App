@@ -96,14 +96,49 @@ try{
       })
 
         // getAllUser
-    const getAllUsers =  asynchandler(async (req, res) =>{
-       try { const users = await User.find()
-        res.status(200).json(users);
-        }  catch (err) {
-            res.status(500).json({error:'Internal server error'})
-        }
-    })
-
+        const getAllUsers = async (req, res) => {
+            try {
+              const pageSize = 2;
+              const page = Number(req.query.pageNumber) || 1;
+              const queryObj = req.query.keyword
+                ? {
+                    name: {
+                      $regex: req.query.keyword,
+                      $options: "i",
+                    },
+                  }
+                : {};
+              const count = await User.countDocuments(queryObj);
+              const users = await User.find(queryObj)
+                .limit(pageSize)
+                .skip(pageSize * (page - 1))
+                .select("-password");
+              
+              if (users.length === 0) {
+                return res.status(200).json({
+                  results: 0,
+                  page,
+                  pages: 0,
+                  users: [],
+                });
+              }
+              
+              if (!users || count === 0) {
+                res.status(404);
+                throw new Error("No users found");
+              }
+          
+              res.status(200).json({
+                results: users.length,
+                page,
+                pages: Math.ceil(count / pageSize),
+                users,
+              });
+            } catch (err) {
+              res.status(500).json({ error: 'Internal server error' });
+            }
+          };
+               
     // updateProfile
     const updateProfile = asynchandler(async(req,res)=>{
         const user = await User.findById(req.user.id)

@@ -8,13 +8,13 @@ const generateToken = (res, id) => {
     expiresIn: "1d",
   });
   res.cookie("accessToken", accessToken, {
-    maxAge: 60000,
+    maxAge: 120000, // 2 minutes in milliseconds
     httpOnly: true,
     secure: false,
     sameSite: "strict",
   });
   res.cookie("refreshToken", refreshToken, {
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
     httpOnly: true,
     secure: false,
     sameSite: "strict",
@@ -22,12 +22,13 @@ const generateToken = (res, id) => {
 };
 
 const renewToken = (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies ? req.cookies.refreshToken : undefined;
   let exist = false;
   let id;
+  
   if (!refreshToken) {
     res.status(401);
-    throw new Error("you haven't  login or don't have refresh token");
+    throw new Error("You haven't logged in or don't have a refresh token");
   } else {
     try {
       const decoded = jwt.verify(refreshToken, process.env.REF_TOKEN_SECRET);
@@ -37,18 +38,20 @@ const renewToken = (req, res) => {
       });
 
       res.cookie("accessToken", accessToken, {
-        maxAge: 60000,
+        maxAge: 120000, // 2 minutes in milliseconds
         httpOnly: true,
         secure: false,
         sameSite: "strict",
       });
-      console.log("refresh token success");
+      
+      console.log("Refresh token success");
       exist = true;
     } catch (error) {
       res.status(401);
-      throw new Error("refresh token failed");
+      throw new Error("Refresh token failed");
     }
   }
+  
   return { exist, id };
 };
 
